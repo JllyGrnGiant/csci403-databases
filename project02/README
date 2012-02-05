@@ -1,0 +1,7 @@
+Joshua French
+CSCI 403 - Database Management
+Project 2
+
+This is my directory for creating a wine database and a program to maintain it.  Original data is provided in wine.xlsx and wine.pd.txt
+
+One of the problems with the data is in the price of wine.  One of the entries is 'free' which is of a different format than the numeric monetary values of the other entries.  There are probably other concerns as well that I don't see.
