@@ -1,4 +1,4 @@
 Joshua French
 csci403 Project04
 
-This directory is for my database Ruby scripts that will do stuff.
+This directory is for my database Ruby scripts that will migrate data from an old database schema into a new schema.

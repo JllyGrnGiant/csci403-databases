@@ -1,0 +1,123 @@
+I took the approach of making separate queries for different required data except in cases where it was easy to
+obtain multiple columns of info from a single query
+
+Display 1 - 1 or 2 queries
+Assumption: Know wine id (labeled as ? in the queries)
+
+-- get main wine info
+SELECT w.name, w.vintage, w.price, w.rating, w.purchase_date, w.drunk_date, w.comment, wy.name FROM wines, wineries WHERE w.id = ? AND w.winery_id = wy.id;
+
+-- get grape info
+SELECT g.name FROM grapes g INNER JOIN grapes_wines gw WHERE g.id = gw.grape_id AND gw.wine_id = ?;
+
+-- get region info
+-- must look not only at vineyards related to wineries but also grapes
+   to get a smaller set of regions that may really make the wines
+-- FALLOUT!!! Obtaining this information requires an extremely long and fugly select statement.  Additionally,
+   even though this select statement obtains a reduced set of regions a wine may be produced in, it doesn't mean
+   all of the regions produce the wine.  It would be much easier to create a new join table between wines and
+   regions for looking up the correct regions that produce certain wines.
+   NULL values for vineyards also mess up any attempts to relate wines to regions in this schema
+SELECT name FROM regions WHERE id IN (
+	SELECT region_id FROM vineyards
+	WHERE id IN (
+		SELECT vineyard_id FROM grapes_vineyards WHERE grape_id IN (
+			SELECT gw.grape_id FROM grapes_wines gw WHERE gw.wine_id = ?))
+	AND winery_id IN (
+		SELECT winery_id FROM wines WHERE id = ?));
+
+Display 2 - 2 queries
+Assumption: Know grape id (labeled as ? in queries)
+
+-- get vineyards growing the grape
+SELECT name FROM vineyards WHERE id IN (SELECT vineyard_id FROM grapes_vineyards WHERE grape_id = ?);
+
+-- get wines made from grape
+SELECT name FROM wines WHERE id IN (SELECT wine_id FROM grapes_wines WHERE grape_id = ?);
+
+Display 3 - ? queries
+Assumption: Know region id (labeled as ? in queries)
+
+-- get wines produced in region
+-- FALLOUT!!! Not all of the wines produced in a winery are necessarily produced in a region.  All we know
+   is the wines are made by a winery that has a vineyard in the region.  Also using grapes data may fix reduce
+   the number of wines to more accurately reflect wines made in a region, but it still doesn't necessarily
+   produce correct results as a grape may be grown in different regions and thus a wine mistakenly associated
+   with another region.
+   We need to change the schema to make use of a relationship between regions and wines.
+SELECT name FROM wines WHERE winery_id IN (SELECT winery_id FROM vineyards WHERE region_id = ?);
+
+-- get country
+SELECT c.name FROM countries c, vineyards v WHERE v.id = ? AND c.id = v.country_id;
+
+Display 4 - 3 queries
+Assumption: Know winery id (labeled as ? in queries)
+
+-- get wines made by winery
+SELECT w.name, wy.name, count(*) FROM wines, wineries WHERE winery_id = ?;
+
+-- get number of wines made from different grapes (doesn't take into account wines using multiple grapes)
+SELECT name, (SELECT count(*) FROM grapes_wines WHERE grape_id = g.id) count FROM grapes g WHERE id IN (
+	SELECT grape_id FROM grapes_vineyards WHERE vineyard_id IN (
+		SELECT id FROM vineyards WHERE winery_id = ?));
+
+-- get region
+SELECT r.name, c.name FROM regions r, countries c, vineyards v WHERE c.id = r.country_id AND r.id = v.region_id AND v.winery_id = ?;
+
+Display 5 - 1 query
+
+-- FALLOUT!!! May need a vintages table since it is being treated as a "first class citizen" in the application
+   by being a main category by which wines can be organized (may use vintages to look up other info)
+
+-- get list of vintages and wines ordered by vintage
+SELECT vintage, name FROM wines ORDER BY vintage;
+
+Add Wine - focus on wines and grapes inserts and complain about regions
+Assumptions: regions is updated based upon selection of winery
+			 The ?'s are filled with the proper information provided by the GUI
+
+-- insert new wine
+INSERT INTO wines(name, purchase_date, drunk_date, rating, price, vintage, comment, winery_id) VALUES(?, ?, ?, ?, ?, ?, ?, ?);
+
+-- get grapes info
+SELECT name FROM grapes;
+
+-- get wineries
+SELECT name FROM wineries;
+
+-- get vintages
+SELECT DISTINCT vintage FROM wines;
+
+-- get regions based upon selected winery from a drop down list
+SELECT r.name FROM regions r, vineyards v WHERE v.region_id = r.id AND v.winery_id = ?;
+
+-- FALLOUT!!! there is a disconnect between wines and regions so you cannot make use of region information well with
+   this schema.  Need some way to relate wines with regions.
+-- FALLOUT!!! there is an issue with Rating as it is possible for the application to try and enforce ratings or
+   the database can try to create the rating ranges from its data
+
+-- insert grapes_wines pair (must use id generated in new wine insert query or have the program create one to insert
+INSERT INTO grapes_wines(grape_id, wine_id) VALUES(?, ?);
+
+-- insert grapes_vineyard pair (grabs first existing vineyard with selected region and winery)
+-- FALLOUT!!! no way to determine what vineyard to associate grapes with as a region can have multiple vineyards
+   which all may grow the same grape, and a winery may own multiple of these vineyards
+INSERT INTO grapes_vineyards(grape_id, vineyard_id) VALUES(?, (SELECT id FROM vineyards WHERE winery_id = ? AND region_id = ? limit 1));
+
+Edit Wine - modify stuff
+Assumptions: New values (labeled as ? in the following queries) are given to us by the GUI
+			 Know wine id being edited (labeled as ???)
+
+-- FALLOUT!!! No easy way to update regions and things as there is a disconnect between wines and regions.
+
+-- get previous wine info
+SELECT r.name, w.name, w.vintage, w.purchase_date, w.drunk_date, w.comment, w.rating, w.price, wy.name FROM wines w, wineries wy, vineyards v, regions r WHERE w.id = ??? AND wy.id = w.winery_id AND v.winery_id = wy.id AND r.id = v.region_id;
+
+-- use select statements from Add Wine page for getting the other possible choices for wineries, vintages, regions, etc.
+
+-- update wine
+UPDATE wines SET name = ?, winery_id = ?, price = ?, purchase_date = ?, drunk_date = ?, comment = ?, rating = ?, vintage = ? WHERE id = ???;
+
+-- update grape - wine relation
+UPDATE grapes_wines SET grape_id = ? WHERE wine_id = ???;
+-- need to potentially remove data created in grapes_vineyards and vineyards

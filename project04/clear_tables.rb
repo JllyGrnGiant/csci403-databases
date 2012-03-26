@@ -4,7 +4,7 @@ require 'sqlite3'
 
 # constants
 # database filename
-FILENAME = 'wine_test.db'
+FILENAME = 'wine.db'
 # sqlite create table statements
 CLEAR_TABLE_STMTS = ['DELETE FROM countries;',
 	'DELETE FROM grapes;',
