@@ -5,3 +5,16 @@ My working directory for creating a database-backed application using an ORM to 
 specifications... Otherwise the clowns will kill me.
 
 This application will model a zoo.
+
+Entities:
+Zoo
+Habitat
+Animal
+Feed
+User
+
+Relationships:
+Zoos have multiple Habitats. Each Habitat may only belong to one Zoo.
+Habitats contain multiple Animals. Each Animal may only live in one Habitat.
+Animals eat many types of Feed. Multiple Animals may eat the same type of Feed.
+Users have multiple favorite Animals. Each Animal can be favorited by multiple Users.
