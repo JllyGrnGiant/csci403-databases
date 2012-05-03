@@ -7,9 +7,9 @@ MongoMapper.database.authenticate('csci403', 'csci403')
 
 class Animal
 	include MongoMapper::Document
-	key :name
-	key :description
-	key :cuteness
+	key :name, String, :required => true
+	key :description, String
+	key :cuteness, Integer
 end
 
 puts "Aaaalmost there... Aaaaaalmost there..."

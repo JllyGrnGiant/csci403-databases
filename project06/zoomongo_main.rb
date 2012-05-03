@@ -19,10 +19,56 @@ class Habitat
   key :location, String
   key :description, String
 
+  many :animals
+
   def to_s
     "#{name}"
   end
+end
 
+class Animal
+  include MongoMapper::Document
+
+  key :name, String, :required => true
+  key :description, String
+  key :cuteness, Integer
+
+  belongs_to :habitat
+
+  def to_s
+    "#{name}"
+  end
+end
+
+class Zoo
+  include MongoMapper::Document
+
+  key :name, String, :required => true
+
+  def to_s
+	"#{name}"
+  end
+end
+
+class Feed
+  include MongoMapper::Document
+
+  key :name, String, :required => true
+
+  def to_s
+	"#{name}"
+  end
+end
+
+class User
+  include MongoMapper::Document
+
+  key :first_name, String, :required => true
+  key :last_name, String
+
+  def to_s
+	"#{first_name} #{last_name}"
+  end
 end
 
 #
@@ -68,34 +114,58 @@ end
 
 # Displays all the zoos.
 def list_zoos
-  # TODO
+  Zoo.all.each do |zoo|
+    puts zoo
+  end
 end
 
 # Displays all the feeds.
 def list_feeds
-  # TODO
+  Feed.all.each do |feed|
+    puts feed
+  end
 end
 
 # Displays all the habitats, and any animal associated with that habitat.
 def list_habitats
-  # TODO
+  Habitat.all.each do |habitat|
+    puts "Habitat name: #{habitat}"
+	puts "Animals in habitat:"
+	habitat.animals.each do |animal|
+	  puts "- #{animal}"
+	end
+  end
 end
 
 # Displays all the animals, and the habitat in which each lives.
 def list_animals
-  # TODO
+  Animal.all.each do |animal|
+    print animal
+	if !animal.habitat.nil?
+	  print " lives in #{animal.habitat}"
+	end
+	puts
+  end
 end
 
 # Displays all the users.
 def list_users
-  # TODO
+  User.all.each do |user|
+    puts user
+  end
 end
 
 # Captures attributes from the program user and saves a new
 # animal in the database.
 def create_animal
   name, description, cuteness, habitat = capture_animal_attributes
-  # TODO
+  animal = Animal.new({
+    :name => name,
+    :description => description,
+    :cuteness => cuteness,
+    :habitat => habitat
+  });
+  animal.save(:safe => true);
 end
 
 def execute_command(command)
